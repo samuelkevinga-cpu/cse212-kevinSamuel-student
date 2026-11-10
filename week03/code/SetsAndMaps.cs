@@ -21,8 +21,26 @@ public static class SetsAndMaps
     /// <param name="words">An array of 2-character words (lowercase, no duplicates)</param>
     public static string[] FindPairs(string[] words)
     {
-        // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        var wordSet = new HashSet<string>(words);
+        var result = new List<string>();
+        var checkedwords = new HashSet<string>();
+
+        foreach (var word in words)
+        {
+            if (word[0] == word[1]) // skip if both letters are the same
+                continue;
+            char[] reversedChars = { word[1], word[0] };
+            string reversedWord = new string(reversedChars);
+
+            if (wordSet.Contains(reversedWord) && !checkedwords.Contains(word) && !checkedwords.Contains(reversedWord))
+            {
+                result.Add($"{word} & {reversedWord}");
+                checkedwords.Add(word);
+                checkedwords.Add(reversedWord);
+            }
+
+        }
+        return result.ToArray();
     }
 
     /// <summary>
@@ -42,7 +60,19 @@ public static class SetsAndMaps
         foreach (var line in File.ReadLines(filename))
         {
             var fields = line.Split(",");
-            // TODO Problem 2 - ADD YOUR CODE HERE
+
+            if (fields.Length >= 4)
+            {
+                var degree = fields[3].Trim();
+                if (degrees.ContainsKey(degree))
+                {
+                    degrees[degree]++;
+                }
+                else
+                {
+                    degrees[degree] = 1;
+                }
+            }
         }
 
         return degrees;
@@ -66,8 +96,37 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+        string clean1 = word1.Replace(" ", "").ToLower();
+        string clean2 = word2.Replace(" ", "").ToLower();
+        if (clean1.Length != clean2.Length)
+        {
+            return false;
+        }
+        var CharCount = new Dictionary<char, int>();
+        foreach (char c in clean1)
+        {
+            if (CharCount.ContainsKey(c))
+            {
+                CharCount[c]++;
+            }
+            else
+            {
+                CharCount[c] = 1;
+            }
+        }
+        foreach (char c in clean2)
+        {
+            if (!CharCount.ContainsKey(c))
+            {
+                return false;
+            }
+            CharCount[c]--;
+            if (CharCount[c] == 0)
+            {
+                CharCount.Remove(c);
+            }
+        }
+        return CharCount.Count == 0;
     }
 
     /// <summary>
@@ -84,6 +143,21 @@ public static class SetsAndMaps
     /// https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php
     /// 
     /// </summary>
+    public class FeatureCollection
+    {
+        public Feature[] Features { get; set; }
+    }
+
+    public class Feature
+    {
+        public EarthquakeProperties Properties { get; set; }
+    }
+
+    public class EarthquakeProperties
+    {
+        public string Place { get; set; }
+        public double Mag { get; set; }
+    }
     public static string[] EarthquakeDailySummary()
     {
         const string uri = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
@@ -96,11 +170,20 @@ public static class SetsAndMaps
 
         var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
 
-        // TODO Problem 5:
-        // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
-        // on those classes so that the call to Deserialize above works properly.
-        // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
-        // 3. Return an array of these string descriptions.
-        return [];
+        // If the feature collection or features list is empty/null, return an empty array
+        if (featureCollection?.Features == null)
+        {
+            return [];
+        }
+
+        var summaries = new List<string>();
+        foreach (var feature in featureCollection.Features)
+        {
+            // Format each earthquake's location and magnitude
+            string summary = $"{feature.Properties.Place} - Mag {feature.Properties.Mag}";
+            summaries.Add(summary);
+        }
+
+        return summaries.ToArray();
     }
 }
